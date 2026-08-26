@@ -9,7 +9,7 @@ Level 5  Date validity         -> log WARNING (continue)
 """
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List
 import pandas as pd
 from src.common import find_column_ci
 
@@ -27,17 +27,15 @@ def validate_columns(
     df: pd.DataFrame,
     required: List[str],
     source_name: str,
-    logger: logging.Logger,
-    aliases_map: Optional[Dict[str, List[str]]] = None
+    logger: logging.Logger
 ) -> None:
     """
-    Level 1: Case-insensitive column validation.
+    Level 1: Case-insensitive column validation without aliases.
     Raises ValueError listing missing columns.
     """
     missing = []
     for req in required:
-        aliases = aliases_map.get(req) if aliases_map else None
-        found = find_column_ci(df, req, aliases)
+        found = find_column_ci(df, req)
         if not found:
             missing.append(req)
 

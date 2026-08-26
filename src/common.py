@@ -9,7 +9,7 @@ Implements the 5 Common Business Rules from the specification:
   Rule 5  Auditability           (matched / unmatched / blank counts)
 """
 from pathlib import Path
-from typing import List, Optional
+from typing import Optional
 import pandas as pd
 
 
@@ -51,29 +51,25 @@ def load_excel(path: Path) -> pd.DataFrame:
     return df
 
 
-def find_column_ci(df: pd.DataFrame, target_name: str, aliases: Optional[List[str]] = None) -> Optional[str]:
+def find_column_ci(df: pd.DataFrame, target_name: str) -> Optional[str]:
     """
-    Find exact column name in DataFrame using case-insensitive and trimmed comparison.
-    Supports list of alternative alias names.
+    Find exact column name in DataFrame using exact case-insensitive & trimmed comparison.
+    No alias substitution - matches target_name ignoring case and whitespace only.
     """
-    candidates = [target_name] + (aliases if aliases else [])
-    cand_norm = [c.strip().lower() for c in candidates]
-    
-    col_map = {str(c).strip().lower(): c for c in df.columns}
-    for cand in cand_norm:
-        if cand in col_map:
-            return col_map[cand]
+    target_norm = target_name.strip().lower()
+    for col in df.columns:
+        if str(col).strip().lower() == target_norm:
+            return str(col)
     return None
 
 
-def get_required_column_ci(df: pd.DataFrame, target_name: str, aliases: Optional[List[str]] = None) -> str:
+def get_required_column_ci(df: pd.DataFrame, target_name: str) -> str:
     """
     Get required column name in DataFrame case-insensitively, or raise ValueError.
     """
-    col = find_column_ci(df, target_name, aliases)
+    col = find_column_ci(df, target_name)
     if col is None:
-        opts = [target_name] + (aliases if aliases else [])
-        raise ValueError(f"Missing required column (case-insensitive): any of {opts}")
+        raise ValueError(f"Missing required column: '{target_name}' (checked case-insensitively)")
     return col
 
 

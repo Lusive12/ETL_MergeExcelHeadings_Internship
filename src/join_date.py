@@ -11,7 +11,7 @@ Logic:
   - Normalize date type codes -> zero-padded 2-char ("1" -> "01")
   - Filter where date_type == "01"
   - Per employee: pick EARLIEST date (MIN)
-  - LEFT JOIN onto PQAH by Personnel No. (case-insensitive)
+  - LEFT JOIN onto PQAH by "Personnel No." (case-insensitive, exact name only)
   - Join Date = DD-Mon-YYYY (e.g. 27-Sep-2020)
   - Years of Service = (today - Join Date).days / 365.25, rounded 2dp
 """
@@ -32,8 +32,8 @@ PQAH_FILE   = SHARED_DIR / "IKP_PQAH.xlsx"
 PA0041_FILE = Path("input/Join Date & Year of Service/IKP_PA0041.xlsx")
 OUTPUT_FILE = Path("output/intermediate/PQAH_Enriched_JoinDate_YoS.xlsx")
 
-PQAH_ALIASES   = {"Personnel No.": ["Personnel No.", "Personnel Number", "Personnel No", "NIK"]}
-PA0041_ALIASES = {"Personnel number": ["Personnel number", "Personnel No.", "Personnel No", "NIK"]}
+PQAH_KEY   = "Personnel No."
+PA0041_KEY = "Personnel number"
 
 DATE_TYPE_PATTERN = re.compile(r"^date\s*type(\.\d+)?$", re.IGNORECASE)
 DATE_VAL_PATTERN  = re.compile(r"^date\s*for\s*date\s*type(\.\d+)?$", re.IGNORECASE)
@@ -71,13 +71,13 @@ def run(logger: logging.Logger) -> dict:
         result["Input Rows"] = input_rows
         logger.info(f"[JoinDate] PQAH: {input_rows:,} rows | PA0041: {len(pa0041):,} rows")
 
-        validate_columns(pqah,   ["Personnel No."],   "IKP_PQAH.xlsx",   logger, PQAH_ALIASES)
-        validate_columns(pa0041, ["Personnel number"], "IKP_PA0041.xlsx", logger, PA0041_ALIASES)
+        validate_columns(pqah,   [PQAH_KEY],   "IKP_PQAH.xlsx",   logger)
+        validate_columns(pa0041, [PA0041_KEY], "IKP_PA0041.xlsx", logger)
 
-        pqah_key   = get_required_column_ci(pqah, "Personnel No.", PQAH_ALIASES["Personnel No."])
-        pa0041_key = get_required_column_ci(pa0041, "Personnel number", PA0041_ALIASES["Personnel number"])
+        pqah_key_col   = get_required_column_ci(pqah, PQAH_KEY)
+        pa0041_key_col = get_required_column_ci(pa0041, PA0041_KEY)
 
-        long_df = _melt_date_pairs(pa0041, pa0041_key, logger)
+        long_df = _melt_date_pairs(pa0041, pa0041_key_col, logger)
         long_df["_pno_norm"] = normalize_id(long_df["_pno_raw"])
         long_df["date_type"] = normalize_date_type(long_df["date_type"])
 
@@ -96,8 +96,8 @@ def run(logger: logging.Logger) -> dict:
         join_dates.columns = ["_pno_norm", "_join_raw"]
         logger.info(f"[JoinDate] Employees with Join Date: {len(join_dates):,}")
 
-        # LEFT JOIN onto PQAH
-        pqah["_key"] = normalize_id(pqah[pqah_key])
+        # LEFT JOIN onto PQAH strictly using "Personnel No." column
+        pqah["_key"] = normalize_id(pqah[pqah_key_col])
         merged = pqah.merge(join_dates, left_on="_key", right_on="_pno_norm", how="left")
         merged = merged.drop(columns=["_pno_norm"], errors="ignore")
 
