@@ -1,7 +1,11 @@
 {
     "run_modules": {
+        "contract_type": false,
+        "education": false,
+        "entity_division": false,
         "cost_center": true,
         "join_date": true,
-        "position_tenure": true
+        "position_tenure": true,
+        "assembler": true
     }
 }

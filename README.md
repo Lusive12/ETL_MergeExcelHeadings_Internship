@@ -1,42 +1,79 @@
-﻿# HR Data Automation Suite
+# HR Data Automation Suite — Full Topic Report
 
-Monthly HR report automation converts raw SAP exports into enriched Excel reports automatically.
+Monthly HR data ETL pipeline that ingests raw SAP exports, performs multi-level validations, enriches 6 core domains, and outputs a unified Topic Report mapped against `IKP_Headings.xlsx`.
 
-## How to use (for HR staff)
+---
 
-1. Export your data from SAP
-2. Place the files in the correct folder inside `input/`
+## 🚀 How to Run
 
-   | File | Place in folder |
-   |------|----------------|
-   | `IKP_IT0027.xlsx` | `input/GENERAL_COST_CENTER/` |
-   | `IKP_CSKT.xlsx`   | `input/GENERAL_COST_CENTER/` |
-   | `IKP_PQAH.xlsx`   | `input/JOIN_DATE/` |
-   | `IKP_PA0041.xlsx` | `input/JOIN_DATE/` |
-   | `IKP_PQAH.xlsx`   | `input/POSITION_TENURE/` |
-   | `IKP_HRP1001.xlsx`| `input/POSITION_TENURE/` |
+1. Place your SAP export files in the designated folders inside `input/`.
+2. Double-click **`RUN_ME.bat`** (or run `python run.py` via virtual environment).
+3. Collect your deliverables from the `output/` folder.
 
-3. Double-click **RUN_ME.bat**
-4. Wait for the green "COMPLETED SUCCESSFULLY" message
-5. Collect your results from the `output/` folder
+---
 
-## Output files
+## 📁 Input Folder Architecture
 
-| File | Contents |
-|------|---------|
-| `00_processing_summary.xlsx` | Overview of all modules: matched/unmatched counts, status |
-| `01_general_cost_center_result.xlsx` | IT0027 with Cost Center Descriptions added |
-| `02_join_date_years_of_service_result.xlsx` | PQAH with Join Date and Years of Service |
-| `03_position_effective_date_current_tenure_result.xlsx` | PQAH with Earliest Start Date and Current Tenure |
+```
+input/
+├── Shared/
+│   ├── IKP_PQAH.xlsx           <- Master employee file (base dataset, primary key: Personnel No.)
+│   ├── IKP_Headings.xlsx       <- Final report column layout template (45 columns)
+│   ├── IKP_Direct_Spv.xlsx     <- Direct supervisor lookup (Superior NIK & Name)
+│   ├── IKP_PA0105.xlsx         <- Email source
+│   └── IKP_Job_Layer.xlsx      <- Job Layer lookup
+│
+├── Contract Type & Contract End Data/
+│   ├── IKP_PA0016.xlsx         <- Contract records
+│   └── IKP_Contract Type.xlsx  <- Contract type master lookup
+│
+├── Education, Institute, Branch of Study/
+│   ├── IKP_IT0022.xlsx         <- Education records
+│   ├── Order_IKP_IT0022.xlsx   <- Education ranking hierarchy (excluding training)
+│   └── IKP_Branch of Study.xlsx<- Branch of study description master
+│
+├── Entity, Division, Area, Function/
+│   ├── ZHR_MAP_ENTITY.xlsx     <- Entity / Area / Function mapping
+│   └── ZHR_MASTER_DIVISION.xlsx<- Division master lookup
+│
+├── General Cost Center & Cost Center Text/
+│   ├── IKP_IT0027.xlsx         <- Cost Center assignments
+│   └── IKP_CSKT.xlsx           <- Cost Center master (MAX Valid To lookup)
+│
+├── Join Date & Year of Service/
+│   └── IKP_PA0041.xlsx         <- Date types (filtered for Date Type 01)
+│
+└── Position Effective Date & Current Tenure/
+    └── IKP_HRP1001.xlsx        <- Position history (Object ID & Start Date)
+```
 
-## Rules
+---
 
-- **Do not rename** the input files â€” names must match exactly.
-- **Close any open Excel files** before running. Output files cannot be overwritten if open.
-- Check the `logs/` folder if something goes wrong.
+## 📦 Output Deliverables
 
-## For developers
+| Output File | Description |
+|---|---|
+| **`FINAL_HR_Topic_Report_YYYYMMDD.xlsx`** | **Final consolidated report** with all 45 columns matching `IKP_Headings.xlsx` layout. |
+| **`00_processing_summary.xlsx`** | Executive audit summary: row counts, matched/unmatched statistics, and module status. |
+| **`intermediate/`** | Enriched output files from each individual module. |
+| **`logs/YYYYMMDD_HHMMSS.log`** | Detailed runtime logs with timestamped diagnostics. |
 
-- All business logic is in `src/`
-- Module toggles: edit `config/settings.json`
-- Add a new module: create `src/your_module.py` with a `run(logger) -> dict` function, then register it in `run.py`
+---
+
+## ⚙️ Module Toggles (`config/settings.json`)
+
+You can enable or disable individual modules at any time:
+
+```json
+{
+    "run_modules": {
+        "contract_type":    true,
+        "education":        true,
+        "entity_division":  true,
+        "cost_center":      true,
+        "join_date":        true,
+        "position_tenure":  true,
+        "assembler":        true
+    }
+}
+```
