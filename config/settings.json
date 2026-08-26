@@ -1,0 +1,7 @@
+{
+    "run_modules": {
+        "cost_center": true,
+        "join_date": true,
+        "position_tenure": true
+    }
+}
