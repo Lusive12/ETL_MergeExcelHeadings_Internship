@@ -5,3 +5,7 @@ __pycache__
 *.bat
 *.pptx
 *.xlsx
+
+dist/
+build/
+*.spec

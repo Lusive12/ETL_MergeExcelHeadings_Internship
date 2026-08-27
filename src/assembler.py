@@ -149,9 +149,9 @@ def run(logger: logging.Logger) -> dict:
             if edu_pno:
                 edu_df["_pno_norm"] = normalize_id(edu_df[edu_pno])
                 cols_map = {}
-                if "Education" in edu_df.columns:
-                    cols_map["Education"] = "Education"
-                if "Institute" in edu_df.columns:
+                if "Text" in edu_df.columns:
+                    cols_map["Text"] = "Education"  
+                if "Institute/location" in edu_df.columns:
                     cols_map["Institute/location"] = "Institute"
                 if "Branch of Study Text" in edu_df.columns:
                     cols_map["Branch of Study Text"] = "Branch Study"
