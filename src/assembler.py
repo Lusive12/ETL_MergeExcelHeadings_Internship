@@ -152,7 +152,7 @@ def run(logger: logging.Logger) -> dict:
                 if "Education" in edu_df.columns:
                     cols_map["Education"] = "Education"
                 if "Institute" in edu_df.columns:
-                    cols_map["Institute"] = "Institute"
+                    cols_map["Institute/location"] = "Institute"
                 if "Branch of Study Text" in edu_df.columns:
                     cols_map["Branch of Study Text"] = "Branch Study"
                 elif "Branch Study" in edu_df.columns:
