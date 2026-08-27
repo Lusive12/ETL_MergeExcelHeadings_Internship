@@ -24,7 +24,7 @@ from src.excel_export import export_df
 
 INPUT_DIR   = Path("input/Contract Type & Contract End Data")
 PA0016_FILE = INPUT_DIR / "IKP_PA0016.xlsx"
-LOOKUP_FILE = INPUT_DIR / "IKP_Contract Type.xlsx"
+LOOKUP_FILE = INPUT_DIR / "Contract Type_IKP_IT0016.xlsx"
 OUTPUT_FILE = Path("output/intermediate/IKP_PA0016_With_ContractType_Description.xlsx")
 
 PA0016_REQUIRED = ["Personnel number", "Contract Type"]
