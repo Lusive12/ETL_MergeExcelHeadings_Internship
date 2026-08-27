@@ -1,8 +1,8 @@
 {
     "run_modules": {
-        "contract_type": false,
-        "education": false,
-        "entity_division": false,
+        "contract_type": true,
+        "education": true,
+        "entity_division": true,
         "cost_center": true,
         "join_date": true,
         "position_tenure": true,

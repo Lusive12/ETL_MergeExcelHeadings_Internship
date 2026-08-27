@@ -1,6 +1,0 @@
-2026-08-05 16:14:53,326 | INFO | Starting ETL Process
-2026-08-05 16:14:53,327 | INFO | Loading personal
-2026-08-05 16:14:53,621 | INFO | Loading company
-2026-08-05 16:14:53,634 | INFO | Loading address
-2026-08-05 16:14:53,649 | INFO | Merging dataframes
-2026-08-05 16:14:53,661 | INFO | Selecting output columns and exporting
