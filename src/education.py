@@ -187,10 +187,10 @@ def run(logger: logging.Logger) -> dict:
         )
 
         logger.info(f"[Education] Output columns ({len(highest_edu.columns)}): {list(highest_edu.columns)}")
-        logger.info(
-            f"[Education] Sample Key/Order/Text:\n"
-            + highest_edu[["Key", "Order", "Text"]].head(5).to_string(index=False)
-        )
+        # logger.info(
+        #     f"[Education] Sample Key/Order/Text:\n"
+        #     + highest_edu[["Key", "Order", "Text"]].head(5).to_string(index=False)
+        # )
 
         export_df(highest_edu, OUTPUT_FILE, logger)
 

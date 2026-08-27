@@ -28,7 +28,7 @@ LOOKUP_FILE = INPUT_DIR / "Contract Type_IKP_IT0016.xlsx"
 OUTPUT_FILE = Path("output/intermediate/IKP_PA0016_With_ContractType_Description.xlsx")
 
 PA0016_REQUIRED = ["Personnel number", "Contract Type"]
-LOOKUP_REQUIRED = ["Contract Type", "Contract type text"]
+LOOKUP_REQUIRED = ["Contract Type", "Contract Type Text"]
 
 
 def run(logger: logging.Logger) -> dict:
@@ -50,23 +50,29 @@ def run(logger: logging.Logger) -> dict:
         logger.info(f"[ContractType] PA0016: {input_rows:,} rows | Lookup: {len(lookup):,} rows")
 
         validate_columns(pa0016, ["Personnel number", "Contract Type"], "IKP_PA0016.xlsx", logger)
-        validate_columns(lookup, ["Contract Type", "Contract type text"], "IKP_Contract Type.xlsx", logger)
+        validate_columns(lookup, ["Contract Type", "Contract Type Text"], "Contract Type_IKP_IT0016.xlsx", logger)
 
         pno_col   = get_required_column_ci(pa0016, "Personnel number")
         ctype_col = get_required_column_ci(pa0016, "Contract Type")
 
         lookup_key = get_required_column_ci(lookup, "Contract Type")
-        lookup_val = get_required_column_ci(lookup, "Contract type text")
+        lookup_val = get_required_column_ci(lookup, "Contract type Text")
 
-        # Build lookup dict
-        lookup["_key_norm"] = normalize_id(lookup[lookup_key])
+        # Build lookup dict -- both sides zero-padded to 2 digits so "2" == "02"
+        lookup["_key_norm"] = normalize_id(lookup[lookup_key]).apply(
+            lambda x: x.zfill(2) if x.isdigit() else x
+        )
         ct_lookup = (
             lookup.drop_duplicates(subset=["_key_norm"], keep="first")
                   .set_index("_key_norm")[lookup_val]
         )
+        logger.info(f"[ContractType] Lookup keys: {sorted(ct_lookup.index.tolist())}")
 
         result_df = pa0016.copy()
-        result_df["_ct_norm"] = normalize_id(result_df[ctype_col])
+        result_df["_ct_norm"] = normalize_id(result_df[ctype_col]).apply(
+            lambda x: x.zfill(2) if x.isdigit() else x
+        )
+        logger.info(f"[ContractType] PA0016 Contract Type values (after zfill): {sorted(result_df['_ct_norm'].dropna().unique().tolist())}")
         result_df["Contract Type Description"] = result_df["_ct_norm"].map(ct_lookup)
 
         # Detect Contract End Date column if available
