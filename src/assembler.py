@@ -229,7 +229,38 @@ def run(logger: logging.Logger) -> dict:
                 pqah = pqah.drop(columns=["_job_norm"], errors="ignore")
                 logger.info("[Assembler] Merged Job Layer.")
 
-        # 10. Construct Final DataFrame mapped to IKP_Headings.xlsx exactly
+        # 10. Map Employee Level: old format (B3, E4) → new format (04, 09)
+        emp_lvl_path = _find_shared_file(["IKP_Employee_Level.xlsx"])
+        if emp_lvl_path:
+            emp_lvl_df = load_excel(emp_lvl_path)
+            old_col = find_column_ci(emp_lvl_df, "Old Level")
+            new_col = find_column_ci(emp_lvl_df, "New Level")
+            if old_col and new_col:
+                emp_lvl_df["_old_norm"] = emp_lvl_df[old_col].str.strip().str.upper()
+                level_map = (
+                    emp_lvl_df.drop_duplicates(subset=["_old_norm"])
+                              .set_index("_old_norm")[new_col]
+                )
+                lvl_col = find_column_ci(pqah, "Lvl")
+                if lvl_col:
+                    def _map_level(val):
+                        if not isinstance(val, str) or val.strip() == "":
+                            return val
+                        v = val.strip().upper()
+                        # If it already looks like a new-format numeric code (e.g. "07", "12")
+                        # keep it; otherwise look up in the mapping table
+                        if v in level_map.index:
+                            return level_map[v]
+                        # Already a bare digit (5,9) or already padded (07,12) - zfill to 2
+                        if v.isdigit():
+                            return v.zfill(2)
+                        return val  # unknown format - keep as-is format or unknown — keep as-is
+                    pqah[lvl_col] = pqah[lvl_col].apply(_map_level)
+                    logger.info("[Assembler] Employee Level old→new format mapping applied.")
+        else:
+            logger.warning("[Assembler] IKP_Employee_Level.xlsx not found in Shared/ — Lvl column not remapped.")
+
+        # 11. Construct Final DataFrame mapped to IKP_Headings.xlsx exactly
         final_df = pd.DataFrame(index=range(len(pqah)))
 
         for col in target_columns:
@@ -239,6 +270,39 @@ def run(logger: logging.Logger) -> dict:
             else:
                 # Blank column (e.g. Salary Cost Center S4, or unrun modules)
                 final_df[col] = ""
+
+        # 12. Normalize all date columns to DD/MM/YYYY (no time component)
+        DATE_COLUMNS = [
+            "Join Date", "Birth Date", "Contract End Date",
+            "Position Effective Date", "Contract Start",
+        ]
+
+        def _normalize_date(val):
+            """Parse any date string -> DD/MM/YYYY. SAP exports use MM/DD/YYYY."""
+            import pandas as _pd
+            if not isinstance(val, str) or val.strip() == "":
+                return val
+            v = val.strip()
+            # Try explicit format list: SAP US format first, then ISO, then others
+            for fmt in ("%m/%d/%Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d",
+                        "%d-%b-%Y", "%d/%m/%Y", "%d-%m-%Y"):
+                try:
+                    parsed = _pd.to_datetime(v, format=fmt, errors="raise")
+                    return parsed.strftime("%d/%m/%Y")
+                except Exception:
+                    continue
+            # Last-resort generic parse (dayfirst=False => month first)
+            try:
+                parsed = _pd.to_datetime(v, dayfirst=False, errors="raise")
+                return parsed.strftime("%d/%m/%Y")
+            except Exception:
+                return val  # Unparseable - leave unchanged
+
+        for dcol in DATE_COLUMNS:
+            matched_dcol = find_column_ci(final_df, dcol)
+            if matched_dcol:
+                final_df[matched_dcol] = final_df[matched_dcol].apply(_normalize_date)
+                logger.info(f"[Assembler] Date normalized to DD/MM/YYYY: '{matched_dcol}'")
 
         validate_row_count(input_rows, len(final_df), module, logger)
         export_df(final_df, OUTPUT_FINAL, logger)
