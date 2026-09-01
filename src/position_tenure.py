@@ -8,7 +8,7 @@ Output: output/intermediate/PQAH_Enriched_PositionTenure.xlsx
 Logic:
   - Build composite key: normalize(Personnel No.) + "|" + normalize(Position)
     Exact case-insensitive match on "Personnel No." and "Position".
-  - In HRP1001: strip leading zeros from "ID of"
+  - In HRP1001: strip leading zeros from "ID of related object"
   - Match "Start Date" and "Object ID"
   - Select MIN(Start Date) per composite key
   - LEFT JOIN onto PQAH
@@ -31,7 +31,7 @@ HRP1001_FILE = Path("input/Position Effective Date & Current Tenure/IKP_HRP1001.
 OUTPUT_FILE  = Path("output/intermediate/PQAH_Enriched_PositionTenure.xlsx")
 
 PQAH_REQUIRED    = ["Personnel No.", "Position"]
-HRP1001_REQUIRED = ["Object ID", "ID of", "Start Date"]
+HRP1001_REQUIRED = ["Object ID", "ID of related object", "Start Date"]
 
 
 def run(logger: logging.Logger) -> dict:
@@ -59,7 +59,7 @@ def run(logger: logging.Logger) -> dict:
         pqah_pos_col = get_required_column_ci(pqah, "Position")
 
         hrp_obj_col = get_required_column_ci(hrp, "Object ID")
-        hrp_id_col  = get_required_column_ci(hrp, "ID of")
+        hrp_id_col  = get_required_column_ci(hrp, "ID of related object")
         hrp_dt_col  = get_required_column_ci(hrp, "Start Date")
 
         # Composite key for PQAH strictly using "Personnel No." and "Position"

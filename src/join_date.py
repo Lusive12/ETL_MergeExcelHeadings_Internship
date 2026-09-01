@@ -106,7 +106,7 @@ def run(logger: logging.Logger) -> dict:
         merged["Year of Service"] = (
             (today - merged["_join_raw"]).dt.days / 365.25
         ).round(2)
-        merged["Join Date"] = merged["_join_raw"].dt.strftime("%d-%b-%Y")
+        merged["Join Date"] = merged["_join_raw"].dt.strftime("%d/%m/%Y")
         merged = merged.drop(columns=["_key", "_join_raw"], errors="ignore")
 
         matched   = int(merged["Join Date"].notna().sum())
