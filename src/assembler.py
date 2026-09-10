@@ -17,9 +17,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 import pandas as pd
-
 from src.common import (normalize_id, load_excel, get_required_column_ci,
-                        find_column_ci)
+                        find_column_ci, normalize_date_column)
 from src.validator import (validate_file_exists, validate_row_count)
 from src.excel_export import export_df
 
@@ -271,38 +270,18 @@ def run(logger: logging.Logger) -> dict:
                 # Blank column (e.g. Salary Cost Center S4, or unrun modules)
                 final_df[col] = ""
 
-        # 12. Normalize all date columns to DD/MM/YYYY (no time component)
+        # 12. Normalize all date columns to DD/MM/YYYY
+        #     Uses column-level format detection: scans the whole column,
+        #     locks the format from unambiguous rows, then converts uniformly.
         DATE_COLUMNS = [
             "Join Date", "Birth Date", "Contract End Date",
             "Position Effective Date", "Contract Start",
         ]
-
-        def _normalize_date(val):
-            """Parse any date string -> DD/MM/YYYY. SAP exports use MM/DD/YYYY."""
-            import pandas as _pd
-            if not isinstance(val, str) or val.strip() == "":
-                return val
-            v = val.strip()
-            # Try explicit format list: SAP US format first, then ISO, then others
-            for fmt in ("%m/%d/%Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d",
-                        "%d-%b-%Y", "%d/%m/%Y", "%d-%m-%Y"):
-                try:
-                    parsed = _pd.to_datetime(v, format=fmt, errors="raise")
-                    return parsed.strftime("%d/%m/%Y")
-                except Exception:
-                    continue
-            # Last-resort generic parse (dayfirst=False => month first)
-            try:
-                parsed = _pd.to_datetime(v, dayfirst=False, errors="raise")
-                return parsed.strftime("%d/%m/%Y")
-            except Exception:
-                return val  # Unparseable - leave unchanged
-
         for dcol in DATE_COLUMNS:
             matched_dcol = find_column_ci(final_df, dcol)
             if matched_dcol:
-                final_df[matched_dcol] = final_df[matched_dcol].apply(_normalize_date)
-                logger.info(f"[Assembler] Date normalized to DD/MM/YYYY: '{matched_dcol}'")
+                final_df[matched_dcol] = normalize_date_column(final_df[matched_dcol])
+                logger.info(f"[Assembler] Date column '{matched_dcol}' normalized to DD/MM/YYYY.")
 
         validate_row_count(input_rows, len(final_df), module, logger)
         export_df(final_df, OUTPUT_FINAL, logger)
