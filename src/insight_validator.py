@@ -175,11 +175,9 @@ def validate_and_export_integrity_insight(
     logs_dir = Path(log_folder)
     logs_dir.mkdir(parents=True, exist_ok=True)
     insight_path = logs_dir / f"{timestamp}_insight.xlsx"
-    latest_path = logs_dir / "latest_insight.xlsx"
 
     try:
         export_df(insight_df, insight_path, logger=None)
-        export_df(insight_df, latest_path, logger=None)
         if logger:
             logger.info(
                 f"[InsightValidator] Data integrity check complete: {len(issues)} issue(s) flagged. "
