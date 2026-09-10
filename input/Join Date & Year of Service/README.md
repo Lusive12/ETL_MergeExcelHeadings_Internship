@@ -6,7 +6,7 @@
 
 ## Files
 
-### `IKP_PA0041.xlsx` — Date Records (SAP PA0041)
+### `IKP_IT0041.xlsx` — Date Records (SAP PA0041)
 - **Export source:** SAP Infotype PA0041
 - **Key column:** `Personnel number`
 - **Filter:** Only records where `Date type` = `"01"` (Join Date) are used

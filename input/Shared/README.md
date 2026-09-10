@@ -18,6 +18,7 @@ This folder contains the **core master files** used across all pipeline modules.
 - **Role:** Defines the exact 45-column layout of the final output report
 - **Used by:** Assembler only
 - **How it works:** Row 1 contains the target column names. The Assembler maps all enriched data to this exact column order.
+- **Make sure** - there is no empty column at "Column M"
 - **⚠️ Do not add or remove columns** — any change to this file changes the final report structure.
 
 ### `IKP_Direct_Spv.xlsx` — Direct Supervisor Lookup

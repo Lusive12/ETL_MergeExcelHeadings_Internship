@@ -31,7 +31,7 @@ Before every run, ensure all files below are present and up to date:
 | Shared | `IKP_PQAH.xlsx` | SAP PQAH report | Monthly |
 | Shared | `IKP_Headings.xlsx` | Template (static) | As needed |
 | Shared | `IKP_Direct_Spv.xlsx` | SAP Direct Supervisor report | Monthly |
-| Shared | `IKP_PA0105.xlsx` | SAP PA0105 (email) | Monthly |
+| Shared | `IKP_IT0105.xlsx` | SAP PA0105 (email) | Monthly |
 | Shared | `IKP_Job_Layer.xlsx` | Master data (static) | As needed |
 | Contract Type... | `IKP_PA0016.xlsx` | SAP PA0016 | Monthly |
 | Contract Type... | `Contract Type_IKP_IT0016.xlsx` | Master data (static) | As needed |
@@ -42,7 +42,7 @@ Before every run, ensure all files below are present and up to date:
 | Entity... | `ZHR_MASTER_DIVISION.xlsx` | Master data | As needed |
 | Cost Center... | `IKP_IT0027.xlsx` | SAP IT0027 | Monthly |
 | Cost Center... | `IKP_CSKT.xlsx` | Master data | As needed |
-| Join Date... | `IKP_PA0041.xlsx` | SAP PA0041 | Monthly |
+| Join Date... | `IKP_IT0041.xlsx` | SAP PA0041 | Monthly |
 | Position Tenure... | `IKP_HRP1001.xlsx` | SAP HRP1001 | Monthly |
 
 > 📌 **Static / master files** are reference tables that rarely change. Only refresh them when the business adds new codes or entries.

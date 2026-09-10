@@ -12,6 +12,7 @@ Place these files here before every run:
   IKP_Headings.xlsx       <- Output column template.
                             Row 1 only — column names in the exact required order.
                             The Final Assembler uses this to build the output report.
+                            Make sure there is no empty column at "Column M"
 
   IKP_Direct Spv.xlsx     <- Supervisor lookup table.
                             col C = Superior Name

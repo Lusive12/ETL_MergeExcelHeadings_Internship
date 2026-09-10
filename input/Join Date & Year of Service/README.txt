@@ -1,7 +1,7 @@
 JOIN DATE & YEAR OF SERVICE
 =============================
 SOURCE FILES (place here before running):
-  IKP_PA0041.xlsx   <- SAP PA0041 export (Date type / Date for date type columns)
+  IKP_IT0041.xlsx   <- SAP PA0041 export (Date type / Date for date type columns)
 
   NOTE: IKP_PQAH.xlsx is read from the INPUT root folder (shared).
 

@@ -5,7 +5,7 @@ Reads:
   - input/Shared/IKP_Headings.xlsx (Column layout template)
   - input/Shared/IKP_PQAH.xlsx (Base employee records)
   - input/Shared/IKP_Direct_Spv.xlsx (Supervisor NIK & Name)
-  - input/Shared/IKP_PA0105.xlsx (Email)
+  - input/Shared/IKP_IT0105.xlsx (Email)
   - input/Shared/IKP_Job_Layer.xlsx (Job Layer)
   - Enriched intermediate files in output/intermediate/
 
@@ -197,8 +197,8 @@ def run(logger: logging.Logger) -> dict:
             pqah = pqah.merge(sub_spv.drop_duplicates(subset=["_pno_norm"]), on="_pno_norm", how="left")
             logger.info("[Assembler] Merged Supervisor NIK and Name.")
 
-        # 8. Join Email (PA0105)
-        email_path = _find_shared_file(["IKP_PA0105.xlsx"])
+        # 8. Join Email (IT0105)
+        email_path = _find_shared_file(["IKP_IT0105.xlsx"])
         if email_path:
             email_df = load_excel(email_path)
             email_pno = get_required_column_ci(email_df, "Personnel number")
@@ -283,7 +283,63 @@ def run(logger: logging.Logger) -> dict:
                 final_df[matched_dcol] = normalize_date_column(final_df[matched_dcol])
                 logger.info(f"[Assembler] Date column '{matched_dcol}' normalized to DD/MM/YYYY.")
 
+        # Validate full dataset integrity before exclusions
         validate_row_count(input_rows, len(final_df), module, logger)
+
+        # 13. Exclude rows per business validation rules (2.1, 2.2, 2.3):
+        # 2.1: PArea in ('IKSP', 'IKTH', 'TKTH') AND Subarea == 'AK00'
+        # 2.2: PArea == 'IKSP' AND Subarea in ('1120', '1121', '1122')
+        # 2.3: Lvl == '99' OR 'ZZ'
+        before_exclude = len(final_df)
+        mask_exclude = pd.Series(False, index=final_df.index)
+
+        parea_col = find_column_ci(final_df, 'PArea')
+        subarea_col = find_column_ci(final_df, 'Subarea')
+        lvl_col = find_column_ci(final_df, 'Lvl')
+
+        if parea_col and subarea_col:
+            parea_series = final_df[parea_col].astype(str).str.strip().str.upper()
+            parea_norm = parea_series.str.replace('Í', 'I', regex=False)
+            subarea_series = final_df[subarea_col].astype(str).str.strip().str.upper()
+
+            rule_2_1 = parea_norm.isin(['IKSP', 'IKTH', 'TKTH']) & (subarea_series == 'AK00')
+            rule_2_2 = (parea_norm == 'IKSP') & subarea_series.isin(['1120', '1121', '1122'])
+
+            mask_exclude = mask_exclude | rule_2_1 | rule_2_2
+
+            count_2_1 = int(rule_2_1.sum())
+            count_2_2 = int(rule_2_2.sum())
+            if count_2_1 > 0:
+                logger.info(f'[Assembler] Rule 2.1: Excluded {count_2_1} row(s) (PArea in IKSP/IKTH/TKTH & Subarea=AK00).')
+            if count_2_2 > 0:
+                logger.info(f'[Assembler] Rule 2.2: Excluded {count_2_2} row(s) (PArea=IKSP & Subarea in 1120/1121/1122).')
+
+        if lvl_col:
+            def _is_lvl_excluded(val):
+                if pd.isna(val) or val == '':
+                    return False
+                s = str(val).strip().upper()
+                if s.endswith('.0'):
+                    s = s[:-2]
+                return s in {'99', 'ZZ'}
+
+            rule_2_3 = final_df[lvl_col].apply(_is_lvl_excluded)
+            mask_exclude = mask_exclude | rule_2_3
+
+            count_2_3 = int(rule_2_3.sum())
+            if count_2_3 > 0:
+                logger.info(f'[Assembler] Rule 2.3: Excluded {count_2_3} row(s) (Lvl in 99/ZZ).')
+
+        total_excluded = int(mask_exclude.sum())
+        if total_excluded > 0:
+            final_df = final_df[~mask_exclude].reset_index(drop=True)
+            logger.info(
+                f'[Assembler] Excluded {total_excluded} row(s) based on business rules. '
+                f'Final report rows: {len(final_df):,} (retained from {before_exclude:,}).'
+            )
+        else:
+            logger.info('[Assembler] No rows matched exclusion criteria (Rules 2.1, 2.2, 2.3).')
+
         export_df(final_df, OUTPUT_FINAL, logger)
 
         result.update({
