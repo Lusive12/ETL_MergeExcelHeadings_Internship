@@ -1,0 +1,97 @@
+================================================================================
+PANDUAN LENGKAP: CARA BUILD EXECUTABLE (.EXE) & DISTRIBUSI PACKAGE SECARA MANDIRI
+================================================================================
+
+Panduan ini berisi langkah demi langkah untuk mengompilasi kode Python menjadi file .exe
+dan menyusun folder distribusi lengkap (termasuk input, config, logs, output) tanpa bantuan AI.
+
+Proses ini terdiri dari 2 tahap utama:
+1. TAHAP 1: Mengompilasi Kode Menjadi .exe menggunakan PyInstaller (File Run_HR_Automation.spec)
+2. TAHAP 2: Menggabungkan .exe dengan Folder Pendukung (config, input, logs, output)
+
+--------------------------------------------------------------------------------
+TAHAP 1: KOMPILASI DENGAN PYINSTALLER
+--------------------------------------------------------------------------------
+
+1. Buka Terminal / PowerShell di folder proyek:
+   C:\Users\User\Documents\AntiGravity\Monthly HR Report Automation
+
+2. Jalankan perintah berikut untuk mengompilasi kode:
+   .venv\Scripts\pyinstaller --noconfirm Run_HR_Automation.spec
+
+   * Mengapa menggunakan Run_HR_Automation.spec?
+     File .spec ini sudah dikonfigurasi untuk mengecualikan (exclude) library besar yang
+     tidak digunakan (seperti matplotlib, scipy, IPython, tkinter), sehingga ukuran folder
+     dan file .exe menjadi jauh lebih ramping (< 30 MB) agar muat dikirim via email.
+
+3. Tunggu hingga proses selesai dan muncul pesan:
+   "Building COLLECT COLLECT-00.toc completed successfully. Build complete!"
+
+4. Hasil kompilasi awal akan berada di folder:
+   dist\Run_HR_Automation\
+   (Berisi file 'Run_HR_Automation.exe' dan subfolder '_internal')
+
+--------------------------------------------------------------------------------
+TAHAP 2: MENYUSUN FOLDER DISTRIBUSI LENGKAP
+--------------------------------------------------------------------------------
+
+PyInstaller HANYA bertugas membuat .exe dan _internal. Agar program dapat berjalan
+di laptop kantor, Anda perlu menyiapkan folder data pendukung di samping file .exe.
+
+Anda dapat menyusunnya secara Manual ATAU secara Otomatis:
+
+--- CARA A: SECARA OTOMATIS (SANGAT DIREKOMENDASIKAN) ---
+
+Cukup jalankan script pembuat paket:
+.venv\Scripts\python.exe make_package.py
+
+(Script ini akan otomatis meng-copy _internal, .exe, config, input, membuat logs & output,
+serta menghasilkan file ZIP siap kirim di folder dist/).
+
+
+--- CARA B: SECARA MANUAL (LANGKAH DEMI LANGKAH) ---
+
+1. Buat folder baru di dalam 'dist\', beri nama:
+   dist\Monthly_HR_Automation_Package\
+
+2. Salin hasil kompilasi:
+   - Copy file 'Run_HR_Automation.exe' dari 'dist\Run_HR_Automation\' ke 'dist\Monthly_HR_Automation_Package\'
+   - Copy folder '_internal' dari 'dist\Run_HR_Automation\' ke 'dist\Monthly_HR_Automation_Package\'
+
+3. Salin folder konfigurasi:
+   - Copy folder 'config\' dari root proyek ke 'dist\Monthly_HR_Automation_Package\config\'
+
+4. Salin folder input:
+   - Copy folder 'input\' dari root proyek ke 'dist\Monthly_HR_Automation_Package\input\'
+   - (Opsional) Hapus file sementara Excel (file yang berawalan '~$') jika ada di dalam folder input.
+
+5. Buat folder kosong untuk logs dan output:
+   - Buat folder baru: dist\Monthly_HR_Automation_Package\logs\
+   - Buat folder baru: dist\Monthly_HR_Automation_Package\output\
+
+6. Buat file peluncur 'RUN_ME.bat' di dalam folder paket:
+   Isi file RUN_ME.bat dengan teks berikut:
+   @echo off
+   cd /d "%~dp0"
+   title Monthly HR Report Automation
+   Run_HR_Automation.exe
+   pause
+
+7. Kompres folder 'Monthly_HR_Automation_Package' menjadi .zip:
+   Klik kanan folder 'Monthly_HR_Automation_Package' -> Compress to ZIP file.
+   File .zip ini siap dikirimkan ke laptop kantor!
+
+================================================================================
+RINGKASAN STRUKTUR AKHIR DI LAPTOP KANTOR
+================================================================================
+
+Monthly_HR_Automation_Package/
+├── Run_HR_Automation.exe    <-- Program utama
+├── RUN_ME.bat               <-- Launcher praktis
+├── HR_USER_GUIDE.txt        <-- Panduan user
+├── _internal/               <-- Library Python (hasil build)
+├── config/                  <-- File konfigurasi JSON
+├── input/                   <-- Berisi 7 subfolder SAP & template Excel
+├── logs/                    <-- Log proses (otomatis terisi)
+└── output/                  <-- Hasil laporan akhir (otomatis terisi)
+================================================================================

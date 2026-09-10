@@ -21,6 +21,7 @@ from src.common import (normalize_id, load_excel, get_required_column_ci,
                         find_column_ci, normalize_date_column)
 from src.validator import (validate_file_exists, validate_row_count)
 from src.excel_export import export_df
+from src.insight_validator import validate_and_export_integrity_insight
 
 SHARED_DIR       = Path("input/Shared")
 HEADINGS_FILE    = SHARED_DIR / "IKP_Headings.xlsx"
@@ -180,9 +181,11 @@ def run(logger: logging.Logger) -> dict:
                 logger.info(f"[Assembler] Merged Cost Center columns: {list(cols_map.values())}")
 
         # 7. Join Direct Supervisor (NIK & Name)
+        spv_raw_df = None
         spv_path = _find_shared_file(["IKP_Direct_Spv.xlsx", "IKP_Direct Spv.xlsx"])
         if spv_path:
             spv_df = load_excel(spv_path)
+            spv_raw_df = spv_df.copy()
             spv_pno = spv_df.columns[0]
             spv_df["_pno_norm"] = normalize_id(spv_df[spv_pno])
             spv_name_col = find_column_ci(spv_df, "Direct Sup") or find_column_ci(spv_df, "Superior Name") or (spv_df.columns[3] if len(spv_df.columns) > 3 else None)
@@ -339,6 +342,9 @@ def run(logger: logging.Logger) -> dict:
             )
         else:
             logger.info('[Assembler] No rows matched exclusion criteria (Rules 2.1, 2.2, 2.3).')
+
+        # 14. Data Integrity Insight Validation (Generates Excel report in logs/)
+        validate_and_export_integrity_insight(final_df, spv_raw_df, logger)
 
         export_df(final_df, OUTPUT_FINAL, logger)
 
